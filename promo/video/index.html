@@ -1,0 +1,482 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+@font-face { font-family: Anton; src: url(fonts/anton-latin-400-normal.woff2); }
+@font-face { font-family: Inter; font-weight: 500; src: url(fonts/inter-latin-500-normal.woff2); }
+@font-face { font-family: Inter; font-weight: 600; src: url(fonts/inter-latin-600-normal.woff2); }
+@font-face { font-family: Inter; font-weight: 700; src: url(fonts/inter-latin-700-normal.woff2); }
+@font-face { font-family: Inter; font-weight: 800; src: url(fonts/inter-latin-800-normal.woff2); }
+@font-face { font-family: Inter; font-weight: 900; src: url(fonts/inter-latin-900-normal.woff2); }
+:root { --o: #ff6a3d; --o2: #ff8a63; --bg: #0d0e10; --panel: #1a1b1f; --panel2: #24252b; --line: #30313a;
+        --text: #f1f1f4; --muted: #9a9ba3; --ok: #3ccf8e; }
+* { box-sizing: border-box; margin: 0; }
+html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--bg); color: var(--text);
+             font-family: Inter, sans-serif; }
+#stage { position: absolute; inset: 0; overflow: hidden; }
+.abs { position: absolute; }
+.scene { position: absolute; inset: 0; display: none; }
+
+/* background */
+.blob { position: absolute; border-radius: 50%; filter: blur(120px); opacity: .55; }
+#grid { position: absolute; inset: -200px; opacity: .07;
+  background-image: linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px);
+  background-size: 90px 90px; }
+#grain { position: absolute; inset: -100px; opacity: .09; mix-blend-mode: overlay; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"); }
+#flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+#fade { position: absolute; inset: 0; background: var(--bg); opacity: 0; pointer-events: none; }
+
+/* S1 hook */
+.hook { position: absolute; left: 0; right: 0; text-align: center; font-family: Anton; line-height: .95;
+        text-transform: uppercase; letter-spacing: .01em; }
+.hw { display: inline-block; margin: 0 14px; will-change: transform; }
+
+/* S2 popups */
+.pop { position: absolute; width: 640px; background: #f3f3f5; color: #1c1c22; border-radius: 22px;
+       box-shadow: 0 40px 90px rgba(0,0,0,.6); overflow: hidden; font-weight: 600; }
+.pop .tb { background: #dcdce2; padding: 18px 24px; display: flex; align-items: center; gap: 12px; font-size: 26px; font-weight: 700; }
+.pop .tb i { width: 18px; height: 18px; border-radius: 50%; display: inline-block; }
+.pop .bd { padding: 28px 30px 30px; font-size: 32px; line-height: 1.3; }
+.pop .btn { margin-top: 22px; display: inline-block; background: #2b6cff; color: #fff; padding: 16px 28px; border-radius: 14px; font-weight: 800; font-size: 28px; }
+.pop .btn.red { background: #e23b4a; } .pop .btn.grn { background: #1aa260; }
+.pop .bar { margin-top: 18px; height: 16px; background: #d0d0d8; border-radius: 9px; overflow: hidden; }
+.pop .bar b { display: block; height: 100%; width: 12%; background: #2b6cff; }
+.pop.ad { background: #ffe14a; } .pop.ad .tb { background: #ffc800; }
+.lock { width: 34px; height: 34px; vertical-align: -6px; margin-right: 6px; }
+
+/* captions */
+#cap { position: absolute; left: 70px; width: 880px; top: 1290px; text-align: center; font-weight: 900;
+       font-size: 82px; line-height: 1.08; letter-spacing: -.02em; text-transform: uppercase;
+       text-shadow: 0 6px 30px rgba(0,0,0,.6); }
+#cap .w { display: inline-block; margin: 0 12px; transition: none; }
+
+/* S3 app */
+#win { position: absolute; left: 60px; top: 300px; width: 960px; background: #131417; border: 2px solid var(--line);
+       border-radius: 36px; padding: 34px 34px 38px; box-shadow: 0 60px 120px -30px rgba(0,0,0,.9), 0 0 0 1px rgba(255,255,255,.03); }
+.hdr { display: flex; align-items: center; gap: 16px; font-weight: 800; font-size: 40px; }
+.logo { width: 58px; height: 58px; }
+.chip { margin-left: auto; font-size: 22px; font-weight: 600; color: var(--muted); border: 2px solid var(--line); padding: 6px 16px; border-radius: 99px; }
+.urlbar { margin-top: 30px; display: flex; align-items: center; gap: 12px; background: var(--panel); border: 3px solid var(--line);
+          border-radius: 24px; padding: 12px 12px 12px 26px; height: 100px; }
+.urlbar .u { flex: 1; font-size: 30px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; }
+.urlbar .ph { color: #5d5e66; }
+.fbtn { background: var(--o); color: #1a0d07; font-weight: 800; font-size: 30px; padding: 0 30px; height: 72px; border-radius: 16px; display: grid; place-items: center; }
+.prev { margin-top: 26px; background: var(--panel); border: 2px solid var(--line); border-radius: 26px; padding: 22px; overflow: hidden; }
+.prow1 { display: flex; gap: 22px; }
+.thumb { width: 300px; height: 169px; border-radius: 16px; flex: none; position: relative; overflow: hidden;
+  background: radial-gradient(circle at 25% 75%, #5ff5d0 0, transparent 45%), radial-gradient(circle at 80% 20%, #63f0d6 0, transparent 40%), linear-gradient(160deg, #2bb59a, #133a5c); }
+.thumb .d { position: absolute; right: 10px; bottom: 10px; background: rgba(0,0,0,.75); font-size: 22px; padding: 2px 10px; border-radius: 8px; font-weight: 600; }
+.ptitle { font-size: 33px; font-weight: 800; line-height: 1.22; }
+.psub { color: var(--muted); font-size: 24px; margin-top: 10px; font-weight: 500; }
+.prow2 { display: flex; gap: 16px; margin-top: 22px; align-items: center; }
+.seg { display: flex; background: var(--panel2); border: 2px solid var(--line); border-radius: 18px; padding: 6px; position: relative; flex: 1; }
+.seg span { flex: 1; text-align: center; font-size: 27px; font-weight: 700; color: var(--muted); padding: 14px 0; position: relative; z-index: 1; }
+.seg .hi { position: absolute; top: 6px; bottom: 6px; border-radius: 13px; background: var(--text); z-index: 0; }
+.dbtn { background: var(--o); color: #1a0d07; font-weight: 800; font-size: 29px; height: 76px; padding: 0 30px; border-radius: 18px; display: grid; place-items: center; }
+.job { margin-top: 26px; background: var(--panel); border: 2px solid var(--line); border-radius: 24px; padding: 20px 24px; display: flex; gap: 20px; align-items: center; }
+.job .thumb { width: 150px; height: 84px; border-radius: 12px; }
+.job .t { font-size: 28px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.job .s { font-size: 23px; color: var(--muted); margin-top: 6px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.job .s b { color: var(--ok); }
+.track { height: 12px; background: var(--panel2); border-radius: 9px; margin-top: 14px; overflow: hidden; }
+.fill { height: 100%; background: linear-gradient(90deg, var(--o), #ffb36b); border-radius: 9px; }
+.check { width: 64px; height: 64px; border-radius: 50%; background: var(--ok); display: grid; place-items: center; flex: none; }
+#cursor { position: absolute; width: 64px; height: 64px; z-index: 50; filter: drop-shadow(0 6px 10px rgba(0,0,0,.5)); }
+.ripple { position: absolute; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%; border: 5px solid var(--o2); z-index: 49; }
+.part { position: absolute; border-radius: 3px; }
+
+/* S4 features */
+.feat { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
+.feat .big { font-family: Anton; font-size: 330px; line-height: .9; text-transform: uppercase; letter-spacing: .01em; }
+.feat .sub { font-size: 50px; font-weight: 800; margin-top: 26px; letter-spacing: -.01em; }
+.feat .inner { will-change: transform; }
+
+/* S5 CTA */
+#s5 .center { position: absolute; left: 0; right: 0; text-align: center; }
+.pill { display: inline-block; background: var(--o); color: #1a0d07; font-weight: 900; font-size: 56px; padding: 18px 44px; border-radius: 99px; letter-spacing: -.01em; }
+.badges { display: flex; justify-content: center; gap: 16px; }
+.badges span { border: 2px solid #3a3b44; color: #d8d8de; padding: 12px 24px; border-radius: 99px; font-size: 30px; font-weight: 700; background: rgba(255,255,255,.04); }
+.url { font-size: 38px; font-weight: 700; color: #e9e9ee; }
+.lib { font-family: Anton; font-size: 120px; text-transform: uppercase; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="bgwrap" class="abs" style="inset:0">
+    <div class="blob" id="b1" style="width:900px;height:900px;background:#ff6a3d"></div>
+    <div class="blob" id="b2" style="width:800px;height:800px;background:#6a3dff"></div>
+    <div class="blob" id="b3" style="width:700px;height:700px;background:#ff3d7f"></div>
+    <div id="grid"></div>
+  </div>
+
+  <!-- S1 hook -->
+  <div class="scene" id="s1">
+    <div class="hook" id="hook" style="top:560px">
+      <div style="font-size:250px"><span class="hw">Stop</span><span class="hw">paying</span></div>
+      <div style="font-size:150px;margin-top:20px"><span class="hw">for</span><span class="hw">video</span></div>
+      <div style="font-size:178px;margin-top:20px;color:var(--o)"><span class="hw">downloaders</span></div>
+    </div>
+  </div>
+
+  <!-- S2 popups -->
+  <div class="scene" id="s2">
+    <div class="pop" data-x="80" data-y="300" data-r="-6">
+      <div class="tb"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i>&nbsp;Video Downloader PRO</div>
+      <div class="bd"><svg class="lock" viewBox="0 0 24 24" fill="#1c1c22"><path d="M6 10V7a6 6 0 0 1 12 0v3h1v12H5V10zm2 0h8V7a4 4 0 0 0-8 0z"/></svg>1080p is a Premium feature<br><span class="btn">Upgrade – $29.99</span></div>
+    </div>
+    <div class="pop" data-x="360" data-y="520" data-r="5">
+      <div class="tb"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i>&nbsp;Daily limit reached</div>
+      <div class="bd">You've used 3 of 3 free downloads today.<br><span class="btn red">Buy Premium</span></div>
+    </div>
+    <div class="pop ad" data-x="60" data-y="760" data-r="-3">
+      <div class="tb">ADVERTISEMENT</div>
+      <div class="bd" style="font-size:44px;font-weight:900">YOU WON!!! Claim your prize now<br><span class="btn grn">CLAIM</span></div>
+    </div>
+    <div class="pop" data-x="380" data-y="980" data-r="7">
+      <div class="tb"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i>&nbsp;Please wait…</div>
+      <div class="bd">Your download starts in 45 seconds<div class="bar"><b></b></div><span class="btn">Skip wait – Go PRO</span></div>
+    </div>
+    <div class="pop" data-x="200" data-y="420" data-r="-9">
+      <div class="tb"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i>&nbsp;Recommended</div>
+      <div class="bd">Install the SuperSearch toolbar?<br><span class="btn">Accept &amp; continue</span></div>
+    </div>
+  </div>
+
+  <!-- S3 app -->
+  <div class="scene" id="s3">
+    <div id="win">
+      <div class="hdr"><svg class="logo" id="hlogo" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="#ff6a3d"/><path d="M24 18l20 14-20 14z" fill="#fff"/><path d="M16 50h32" stroke="#fff" stroke-width="5" stroke-linecap="round"/></svg>VidFetch<span class="chip">Free · Open source</span></div>
+      <div class="urlbar" id="urlbar"><div class="u" id="url"><span class="ph">Paste a video link…</span></div><div class="fbtn">Fetch</div></div>
+      <div class="prev" id="prev">
+        <div class="prow1"><div class="thumb"><span class="d">12:34</span></div>
+          <div><div class="ptitle">Building an ESP32 heart-rate monitor</div><div class="psub">Maker Bench · 12:34</div></div></div>
+        <div class="prow2"><div class="seg" id="seg"><div class="hi" id="segHi"></div><span>Best</span><span id="q1080">1080p</span><span>720p</span><span>MP3</span></div>
+          <div class="dbtn" id="dbtn">Download</div></div>
+      </div>
+      <div class="job" id="job"><div class="thumb"></div>
+        <div style="flex:1;min-width:0"><div class="t">Building an ESP32 heart-rate monitor</div><div class="s" id="jstat">Downloading · 0%</div><div class="track"><div class="fill" id="jfill"></div></div></div>
+        <div class="check" id="jcheck"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#0d0e10" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+      </div>
+    </div>
+    <div id="parts"></div>
+    <div class="ripple" id="rip"></div>
+    <svg id="cursor" viewBox="0 0 32 32"><path d="M6 3l20 12-9 2-4 9z" fill="#fff" stroke="#111" stroke-width="2" stroke-linejoin="round"/></svg>
+  </div>
+
+  <!-- S4 features -->
+  <div class="scene" id="s4">
+    <div class="feat" data-bg="#ff6a3d" data-fg="#120a06"><div class="inner"><div class="big">4K</div><div class="sub">Up to 2160p, crystal clear</div></div></div>
+    <div class="feat" data-bg="#0d0e10" data-fg="#ffffff"><div class="inner"><div class="big" style="color:var(--o)">MP3</div><div class="sub">Audio only, one click</div></div></div>
+    <div class="feat" data-bg="#f1f1f4" data-fg="#0d0e10"><div class="inner"><div class="big" style="font-size:230px">Playlists</div><div class="sub">The whole list, its own folder</div></div></div>
+    <div class="feat" data-bg="#0d0e10" data-fg="#ffffff"><div class="inner"><div class="big" style="font-size:270px">No ads</div><div class="sub" style="color:var(--o)">Ever.</div></div></div>
+    <div class="feat" data-bg="#ff6a3d" data-fg="#120a06"><div class="inner"><div class="big" style="font-size:210px">No<br>tracking</div><div class="sub">Runs on your PC</div></div></div>
+  </div>
+
+  <!-- S5 CTA -->
+  <div class="scene" id="s5">
+    <div class="center" id="c5logo" style="top:330px"><svg width="300" height="300" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="#ff6a3d"/><path d="M24 18l20 14-20 14z" fill="#fff"/><path d="M16 50h32" stroke="#fff" stroke-width="5" stroke-linecap="round"/></svg></div>
+    <div class="center" id="c5name" style="top:660px;font-family:Anton;font-size:190px;letter-spacing:.01em">VIDFETCH</div>
+    <div class="center" id="c5pill" style="top:900px"><span class="pill">FREE FOR WINDOWS</span></div>
+    <div class="center" id="c5badges" style="top:1040px"><div class="badges"><span>Open source</span><span>No ads</span><span>No sign-up</span></div></div>
+    <div class="center" id="c5lib" style="top:1170px"><div class="lib">Link in bio</div></div>
+    <div class="center" id="c5url" style="top:1320px"><span class="url">sithumaluvihare.github.io/vidfetch</span></div>
+    <div class="center" id="c5arrow" style="top:1390px"><svg width="90" height="90" viewBox="0 0 24 24" fill="none" stroke="#ff6a3d" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v15M5 12l7 7 7-7"/></svg></div>
+  </div>
+
+  <div id="cap"></div>
+  <div id="grain"></div>
+  <div id="flash"></div>
+  <div id="fade"></div>
+</div>
+
+<script>
+// ---------------------------------------------------------------- timing (overwritten from the voice timings)
+window.CUE = {
+  end: 15.0,
+  lines: [
+    { s: 0.00, words: [["Stop", 0.05], ["paying", 0.32], ["for", 0.62], ["video", 0.78], ["downloaders.", 1.0]] },
+    { s: 1.55, words: [["Ads.", 1.6], ["Limits.", 2.0], ["Nope.", 2.5]] },
+    { s: 3.10, words: [["This", 3.12], ["is", 3.3], ["VidFetch.", 3.45], ["Paste", 4.4], ["a", 4.68], ["link,", 4.78], ["pick", 5.4], ["a", 5.62], ["quality...", 5.72], ["done.", 7.1]] },
+    { s: 8.40, words: [["4K.", 8.5], ["MP3.", 9.15], ["Playlists.", 9.8], ["No", 10.6], ["ads,", 10.8], ["no", 11.25], ["tracking.", 11.42]] },
+    { s: 12.20, words: [["VidFetch.", 12.3], ["Free", 13.0], ["for", 13.25], ["Windows.", 13.4], ["Link", 14.05], ["in", 14.3], ["bio.", 14.42]] },
+  ],
+};
+
+// ---------------------------------------------------------------- helpers
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, k) => a + (b - a) * k;
+const P = (t, s, d) => clamp((t - s) / d);
+const E = {
+  out: k => 1 - Math.pow(1 - k, 3),
+  out5: k => 1 - Math.pow(1 - k, 5),
+  inOut: k => k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2,
+  in: k => k * k * k,
+  back: k => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(k - 1, 3) + c1 * Math.pow(k - 1, 2); },
+  elastic: k => k === 0 || k === 1 ? k : Math.pow(2, -10 * k) * Math.sin((k * 10 - .75) * (2 * Math.PI) / 3) + 1,
+};
+function rand(seed) { let x = Math.sin(seed * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
+const W = (li, wi) => CUE.lines[li].words[wi][1];
+function wordTime(li, re) { const w = CUE.lines[li].words.find(w => re.test(w[0])); return w ? w[1] : null; }
+function lastWord(li, re) { const ws = CUE.lines[li].words.filter(w => re.test(w[0])); return ws.length ? ws[ws.length - 1][1] : null; }
+function show(id, on) { $(id).style.display = on ? "block" : "none"; }
+let shakeEvents = [];
+function shake(t) {
+  let x = 0, y = 0, r = 0;
+  for (const [t0, amp] of shakeEvents) {
+    const d = t - t0; if (d < 0 || d > .35) continue;
+    const a = amp * Math.exp(-d * 14);
+    x += a * Math.sin(d * 95); y += a * Math.cos(d * 80); r += a * .02 * Math.sin(d * 70);
+  }
+  return `translate(${x}px,${y}px) rotate(${r}deg)`;
+}
+function flashAt(t, times, dur = .12, peak = .85) {
+  let o = 0; for (const t0 of times) { const d = t - t0; if (d >= 0 && d < dur) o = Math.max(o, peak * (1 - d / dur)); } return o;
+}
+function placeCursor(t, keys) {
+  // keys: [[time, x, y], ...] in stage coordinates; eases between consecutive keys
+  if (t <= keys[0][0]) return keys[0].slice(1);
+  for (let i = 0; i < keys.length - 1; i++) {
+    const [t0, x0, y0] = keys[i], [t1, x1, y1] = keys[i + 1];
+    if (t <= t1) { const k = E.inOut(clamp((t - t0) / (t1 - t0))); return [lerp(x0, x1, k), lerp(y0, y1, k)]; }
+  }
+  return keys[keys.length - 1].slice(1);
+}
+
+// karaoke captions: 1-3 word chunks, current word in orange
+function chunks(li) {
+  const out = []; let cur = [];
+  CUE.lines[li].words.forEach((w, i) => {
+    cur.push(i);
+    if (cur.length === 3 || /[.,!?]$/.test(w[0]) || /\.\.\.$/.test(w[0])) { out.push(cur); cur = []; }
+  });
+  if (cur.length) out.push(cur);
+  return out;
+}
+function caption(t, li, opts = {}) {
+  const cap = $("#cap"), line = CUE.lines[li], cs = chunks(li);
+  let ci = 0; cs.forEach((c, i) => { if (t >= line.words[c[0]][1] - .04) ci = i; });
+  const key = li + ":" + ci;
+  if (cap.dataset.key !== key) {
+    cap.dataset.key = key;
+    cap.innerHTML = cs[ci].map(i => `<span class="w">${line.words[i][0].replace(/\.\.\.$/, "").replace(/[.,]+$/, "")}</span>`).join(" ");
+  }
+  cap.style.top = (opts.top ?? 1290) + "px";
+  cap.style.fontSize = (opts.size ?? 96) + "px";
+  const spans = cap.children;
+  cs[ci].forEach((wi, j) => {
+    const w = line.words[wi], k = P(t, w[1] - .04, .14), on = t >= w[1] - .04, s = spans[j];
+    s.style.opacity = on ? 1 : 0;
+    s.style.transform = `translateY(${(1 - E.back(k)) * 40}px) scale(${lerp(.7, 1, E.back(k))})`;
+    const next = line.words[wi + 1]?.[1] ?? Infinity;
+    s.style.color = on && t < next - .02 ? "var(--o)" : "#fff";
+  });
+}
+
+// ---------------------------------------------------------------- render one frame
+function render(t) {
+  const L = CUE.lines, T1 = L[1].s, T2 = L[2].s, T3 = L[3].s, T4 = L[4].s, END = CUE.end;
+  shakeEvents = [];
+  const scene = t < T1 ? 1 : t < T2 ? 2 : t < T3 ? 3 : t < T4 ? 4 : 5;
+  ["#s1", "#s2", "#s3", "#s4", "#s5"].forEach((id, i) => show(id, scene === i + 1));
+  $("#cap").style.display = (scene === 2 || scene === 3) ? "block" : "none";
+
+  // background drift
+  const bgk = t / END;
+  $("#b1").style.transform = `translate(${-200 + 300 * Math.sin(t * .6)}px, ${-250 + 900 * bgk}px)`;
+  $("#b2").style.transform = `translate(${500 + 200 * Math.cos(t * .5)}px, ${1300 - 600 * bgk}px)`;
+  $("#b3").style.transform = `translate(${600 - 300 * bgk}px, ${400 + 200 * Math.sin(t * .7)}px)`;
+  $("#grid").style.transform = `translate(${(t * 30) % 90}px, ${(t * 45) % 90}px)`;
+  $("#grain").style.transform = `translate(${Math.floor(rand(Math.floor(t * 30)) * 100) - 50}px, ${Math.floor(rand(Math.floor(t * 30) + 9) * 100) - 50}px)`;
+  let flashes = [];
+
+  // ---- S1 hook: words slam in, shake on each
+  if (scene === 1) {
+    const ws = $$("#hook .hw");
+    ws.forEach((el, i) => {
+      const t0 = L[0].words[i][1], k = P(t, t0, .16);
+      el.style.opacity = t >= t0 ? 1 : 0;
+      el.style.transform = `scale(${lerp(2.6, 1, E.out5(k))})`;
+      el.style.filter = `blur(${(1 - k) * 12}px)`;
+      shakeEvents.push([t0, i === 4 ? 26 : 14]);
+    });
+    const outK = E.in(P(t, T1 - .14, .14));
+    $("#hook").style.transform = `scale(${1 + outK * 1.8})`;
+    $("#hook").style.opacity = 1 - outK;
+    $("#s1").style.transform = shake(t);
+  }
+
+  // ---- S2 popups pile up, shatter on "Nope"
+  if (scene === 2) {
+    const tNope = wordTime(1, /^nope/i) ?? (T2 - .5);
+    const pops = $$("#s2 .pop"), span = Math.max(.6, tNope - T1 - .12);
+    pops.forEach((el, i) => {
+      const t0 = T1 + i * span / pops.length, k = P(t, t0, .22);
+      const x = +el.dataset.x, y = +el.dataset.y, r = +el.dataset.r;
+      const ex = P(t, tNope, .45), exE = E.out(ex);
+      const ang = rand(i + 3) * Math.PI * 2, dist = 900 + rand(i + 7) * 500;
+      const dx = Math.cos(ang) * dist * exE, dy = Math.sin(ang) * dist * exE - 300 * exE + 900 * ex * ex;
+      el.style.opacity = t < t0 ? 0 : 1 - E.in(ex);
+      el.style.transform = `translate(${x + dx}px, ${y + dy}px) rotate(${r + exE * (rand(i) * 2 - 1) * 260}deg) scale(${lerp(.3, 1, E.back(k)) * (1 + exE * .4)})`;
+      el.style.filter = ex > 0 ? `blur(${exE * 6}px)` : "none";
+      if (t >= t0) shakeEvents.push([t0, 8]);
+    });
+    shakeEvents.push([tNope, 34]);
+    flashes.push(tNope);
+    caption(t, 1, { top: 1340, size: 130 });
+    $("#s2").style.transform = shake(t);
+  }
+
+  // ---- S3 app demo
+  if (scene === 3) {
+    const tPaste = wordTime(2, /^paste/i), tQual = wordTime(2, /^quality/i) ?? wordTime(2, /^pick/i) + .3;
+    const tDone = lastWord(2, /^done/i) ?? T3 - 1.2;
+    const tDl = Math.max(tQual + .45, tDone - 1.0);
+    const tIn = T2;
+    const win = $("#win");
+    const kIn = E.back(P(t, tIn, .5)), kOut = E.in(P(t, T3 - .16, .16));
+    const punch = Math.exp(-Math.max(0, t - tDone) * 9) * (t >= tDone ? .05 : 0);
+    win.style.opacity = P(t, tIn, .2) * (1 - kOut);
+    win.style.transform = `translateY(${(1 - kIn) * 400 - kOut * 200}px) scale(${lerp(.85, 1, kIn) * (1 + punch) * (1 - kOut * .15)})`;
+    // logo pop on "VidFetch"
+    const tName = wordTime(2, /vidfetch/i) ?? tIn + .3, kl = P(t, tName, .35);
+    $("#hlogo").style.transform = `scale(${1 + Math.sin(kl * Math.PI) * .35}) rotate(${Math.sin(kl * Math.PI) * -10}deg)`;
+    // paste
+    const url = "https://videos.example.com/watch?v=esp32hrm";
+    const kU = P(t, tPaste, .25);
+    $("#url").innerHTML = t < tPaste ? '<span class="ph">Paste a video link…</span>' : url.slice(0, Math.ceil(url.length * kU));
+    const glow = t >= tPaste ? Math.exp(-(t - tPaste) * 3) : 0;
+    $("#urlbar").style.borderColor = `rgba(255,106,61,${t >= tPaste ? .45 + glow * .55 : 0})`;
+    $("#urlbar").style.boxShadow = `0 0 ${60 * glow}px rgba(255,106,61,${glow * .7})`;
+    // preview appears
+    const tPrev = tPaste + .3, kP = E.out(P(t, tPrev, .35));
+    const prev = $("#prev");
+    prev.style.display = t >= tPrev ? "block" : "none";
+    prev.style.opacity = kP; prev.style.transform = `translateY(${(1 - kP) * 40}px)`;
+    // quality highlight: Best -> 1080p
+    const seg = $("#seg"), spans = seg.querySelectorAll("span"), hi = $("#segHi");
+    if (spans[0].offsetWidth) {
+      const a = spans[0], b = spans[1], kq = E.out(P(t, tQual, .2));
+      hi.style.left = lerp(a.offsetLeft, b.offsetLeft, kq) + "px"; hi.style.width = lerp(a.offsetWidth, b.offsetWidth, kq) + "px";
+      spans[0].style.color = kq < .5 ? "#0d0e10" : "var(--muted)"; spans[1].style.color = kq >= .5 ? "#0d0e10" : "var(--muted)";
+    }
+    // download job
+    const job = $("#job"), kJ = E.back(P(t, tDl + .05, .3));
+    job.style.display = t >= tDl + .05 ? "flex" : "none";
+    job.style.opacity = P(t, tDl + .05, .15); job.style.transform = `translateY(${(1 - kJ) * 60}px) scale(${lerp(.9, 1, kJ)})`;
+    const kProg = E.inOut(P(t, tDl + .15, tDone - tDl - .15));
+    $("#jfill").style.width = (kProg * 100) + "%";
+    const speed = (38 + 9 * Math.sin(t * 13) + 5 * rand(Math.floor(t * 12))).toFixed(1);
+    $("#jstat").innerHTML = t >= tDone ? "<b>Done</b> · 1080p · Saved to Downloads" : `Downloading · ${Math.round(kProg * 100)}% · ${speed} MB/s`;
+    const kC = P(t, tDone, .35);
+    $("#jcheck").style.transform = `scale(${t >= tDone ? E.elastic(kC) : 0})`;
+    if (t >= tDone) shakeEvents.push([tDone, 16]);
+    // cursor path (stage coords): win at (60,250); measure targets
+    const wr = win.getBoundingClientRect();
+    const tgt = el => { const r = el.getBoundingClientRect(); return [r.left + r.width * .5 - wr.left, r.top + r.height * .55 - wr.top]; };
+    const wx = 60, wy = 300;
+    const pu = tgt($("#urlbar")), pq = tgt($("#q1080")), pd = tgt($("#dbtn"));
+    const keys = [[tIn, 1150, 1700], [tPaste - .45, 1150, 1700], [tPaste - .05, wx + pu[0] - 120, wy + pu[1]], [tQual - .35, wx + pu[0] - 120, wy + pu[1] + 60],
+                  [tQual - .03, wx + pq[0], wy + pq[1]], [tDl - .3, wx + pq[0], wy + pq[1]], [tDl - .02, wx + pd[0], wy + pd[1]], [tDone, wx + pd[0] + 40, wy + pd[1] + 160], [T3, 1150, 1800]];
+    const [cx, cy] = placeCursor(t, keys);
+    const clicks = [tPaste, tQual, tDl];
+    const press = clicks.some(c => t >= c - .03 && t < c + .07);
+    $("#cursor").style.transform = `translate(${cx - 8}px, ${cy - 6}px) scale(${press ? .82 : 1})`;
+    $("#cursor").style.opacity = 1 - kOut;
+    // click ripple
+    const lastClick = clicks.filter(c => t >= c).pop(), rip = $("#rip");
+    if (lastClick !== undefined && t - lastClick < .4) {
+      const kr = (t - lastClick) / .4; const pos = placeCursor(lastClick, keys);
+      rip.style.display = "block"; rip.style.left = pos[0] + "px"; rip.style.top = pos[1] + "px";
+      rip.style.transform = `scale(${1 + kr * 3.2})`; rip.style.opacity = 1 - kr;
+    } else rip.style.display = "none";
+    // confetti burst at done
+    const parts = $("#parts");
+    if (!parts.children.length) for (let i = 0; i < 46; i++) { const d = document.createElement("div"); d.className = "part"; parts.appendChild(d); }
+    const jr = job.getBoundingClientRect(), ox = jr.left + jr.width - 80, oy = jr.top + jr.height / 2;
+    [...parts.children].forEach((p, i) => {
+      const d = t - tDone; if (d < 0 || d > 1.2 || job.style.display === "none") { p.style.display = "none"; return; }
+      const ang = rand(i * 3.1) * Math.PI * 2, sp = 600 + rand(i * 7.7) * 1100;
+      const x = ox + Math.cos(ang) * sp * d, y = oy + Math.sin(ang) * sp * d * .8 + 1600 * d * d;
+      p.style.display = "block"; p.style.left = x + "px"; p.style.top = y + "px";
+      p.style.width = (10 + rand(i) * 14) + "px"; p.style.height = (16 + rand(i + 1) * 18) + "px";
+      p.style.background = ["#ff6a3d", "#ffb36b", "#3ccf8e", "#ffffff", "#ff3d7f"][i % 5];
+      p.style.transform = `rotate(${d * 900 * (rand(i + 2) - .5)}deg)`; p.style.opacity = 1 - clamp((d - .7) / .5);
+    });
+    caption(t, 2, { top: 1330, size: 104 });
+    $("#s3").style.transform = shake(t);
+  }
+
+  // ---- S4 features: full-screen slams on each keyword
+  if (scene === 4) {
+    const w = L[3].words;
+    const times = [wordTime(3, /^4k/i), wordTime(3, /^mp3/i), wordTime(3, /^playlists/i), wordTime(3, /^no$/i),
+                   (w.filter(x => /^no$/i.test(x[0]))[1] || [0, lastWord(3, /^track/i)])[1]];
+    let cur = -1; times.forEach((tt, i) => { if (tt != null && t >= tt - .03) cur = i; });
+    $$("#s4 .feat").forEach((el, i) => {
+      el.style.display = i === cur ? "grid" : "none";
+      if (i !== cur) return;
+      const k = P(t, times[i] - .03, .2);
+      el.style.background = el.dataset.bg; el.style.color = el.dataset.fg;
+      el.querySelector(".inner").style.transform = `scale(${lerp(1.7, 1, E.out5(k)) * (1 + (t - times[i]) * .04)}) rotate(${(1 - E.out(k)) * (i % 2 ? 6 : -6)}deg)`;
+      el.querySelector(".sub").style.opacity = P(t, times[i] + .08, .15);
+      el.querySelector(".sub").style.transform = `translateY(${(1 - E.out(P(t, times[i] + .08, .2))) * 30}px)`;
+    });
+    if (cur < 0) { $("#s4").style.background = "transparent"; }
+    times.forEach(tt => tt != null && shakeEvents.push([tt, 20]));
+    $("#s4").style.transform = shake(t);
+  }
+
+  // ---- S5 call to action
+  if (scene === 5) {
+    const tFree = wordTime(4, /^free/i) ?? T4 + .7, tLink = wordTime(4, /^link/i) ?? T4 + 1.8;
+    const kL = P(t, T4, .6);
+    $("#c5logo").style.transform = `scale(${E.elastic(kL)}) rotate(${(1 - E.out(kL)) * -25}deg)`;
+    const kN = E.out5(P(t, T4 + .12, .3));
+    $("#c5name").style.opacity = kN; $("#c5name").style.transform = `translateY(${(1 - kN) * 60}px)`;
+    $("#c5name").style.letterSpacing = lerp(.2, .01, kN) + "em";
+    const kF = E.back(P(t, tFree, .3));
+    $("#c5pill").style.opacity = P(t, tFree, .1); $("#c5pill").style.transform = `scale(${lerp(.4, 1, kF)})`;
+    const kB = E.out(P(t, tFree + .25, .3));
+    $("#c5badges").style.opacity = kB; $("#c5badges").style.transform = `translateY(${(1 - kB) * 30}px)`;
+    const kLib = E.out5(P(t, tLink, .25));
+    $("#c5lib").style.opacity = kLib; $("#c5lib").style.transform = `scale(${lerp(1.6, 1, kLib)})`;
+    $("#c5url").style.opacity = E.out(P(t, tLink + .15, .25));
+    $("#c5arrow").style.opacity = E.out(P(t, tLink + .2, .2));
+    $("#c5arrow").style.transform = `translateY(${Math.abs(Math.sin((t - tLink) * 7)) * 26}px)`;
+    shakeEvents.push([T4, 10], [tFree, 12], [tLink, 16]);
+    $("#s5").style.transform = shake(t);
+  }
+
+  // transitions: white flash on scene cuts + loop fade at the end
+  flashes.push(T2, T3, T4);
+  $("#flash").style.opacity = flashAt(t, flashes, .12, .75);
+  $("#fade").style.opacity = E.in(P(t, END - .3, .3));
+}
+window.render = render;
+// Sound-effect cue list, derived from the same timings as the animation.
+window.EVENTS = function () {
+  const L = CUE.lines, T1 = L[1].s, T2 = L[2].s, T3 = L[3].s, T4 = L[4].s, ev = [];
+  L[0].words.forEach((w, i) => ev.push({ type: i === 4 ? "boom" : "hit", t: w[1] }));
+  const tNope = wordTime(1, /^nope/i) ?? (T2 - .5), n = 5, span = Math.max(.6, tNope - T1 - .12);
+  for (let i = 0; i < n; i++) ev.push({ type: "pop", t: T1 + i * span / n });
+  ev.push({ type: "shatter", t: tNope });
+  [T2, T3, T4].forEach(t => ev.push({ type: "whoosh", t: t - .12 }));
+  const tPaste = wordTime(2, /^paste/i), tQual = wordTime(2, /^quality/i) ?? wordTime(2, /^pick/i) + .3;
+  const tDone = lastWord(2, /^done/i) ?? T3 - 1.2, tDl = Math.max(tQual + .45, tDone - 1.0);
+  [tPaste, tQual, tDl].forEach(t => ev.push({ type: "click", t }));
+  ev.push({ type: "rise", t: tDl + .1, end: tDone });
+  ev.push({ type: "ding", t: tDone });
+  const w = L[3].words, nos = w.filter(x => /^no$/i.test(x[0]));
+  [wordTime(3, /^4k/i), wordTime(3, /^mp3/i), wordTime(3, /^playlists/i), nos[0]?.[1], (nos[1] || [0, lastWord(3, /^track/i)])[1]]
+    .forEach(t => t != null && ev.push({ type: "hit", t }));
+  ev.push({ type: "boom", t: T4 });
+  [wordTime(4, /^free/i), wordTime(4, /^link/i)].forEach(t => t != null && ev.push({ type: "hit", t }));
+  return { events: ev.sort((a, b) => a.t - b.t), end: CUE.end, T: [T1, T2, T3, T4] };
+};
+render(0);
+</script>
+</body>
+</html>
