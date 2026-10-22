@@ -47,11 +47,7 @@ The API only accepts requests from the app's own page, which holds a random per-
 
 ## Releasing a new version
 
-```
-git tag v1.1.0
-git push origin v1.1.0
-```
-
+Change `VERSION` at the top of `app.py` (for example to `"1.1.0"`) and push to `main`.
 GitHub Actions builds the app on Windows, smoke-tests it, and publishes a release with the zip and its checksum. The website's download button always points to the latest release.
 
 ## Responsible use

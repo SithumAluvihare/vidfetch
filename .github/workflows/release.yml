@@ -1,9 +1,11 @@
 name: Build and release
 
-# Push a tag like v1.0.0 to build VidFetch for Windows and publish it as a GitHub Release.
-# "Run workflow" on the Actions tab builds a test copy without releasing it.
+# Releasing: bump VERSION in app.py and push to main (or push a tag like v1.1.0).
+# If no release exists for that version yet, VidFetch is built on Windows, smoke-tested
+# and published as a GitHub Release. "Run workflow" on the Actions tab builds a test copy.
 on:
   push:
+    branches: [main]
     tags: ["v*"]
   workflow_dispatch:
 
@@ -11,7 +13,34 @@ permissions:
   contents: write
 
 jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      release: ${{ steps.v.outputs.release }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            version="${GITHUB_REF_NAME#v}"
+          else
+            version=$(sed -n 's/^VERSION = "\([^"]*\)".*/\1/p' app.py)
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if gh release view "v$version" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "release=false" >> "$GITHUB_OUTPUT"
+            echo "Release v$version already exists; nothing to publish."
+          else
+            echo "release=true" >> "$GITHUB_OUTPUT"
+            echo "Will build and publish v$version."
+          fi
+
   windows:
+    needs: check
+    if: needs.check.outputs.release == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: windows-latest
     defaults:
       run:
@@ -28,9 +57,9 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements-build.txt
 
-      - name: Set version from tag
+      - name: Set version
         run: |
-          $version = if ("${{ github.ref_type }}" -eq "tag") { "${{ github.ref_name }}".TrimStart("v") } else { "0.0.0-dev" }
+          $version = "${{ needs.check.outputs.version }}"
           (Get-Content app.py -Raw) -replace 'VERSION = "[^"]*"', "VERSION = `"$version`"" | Set-Content app.py -NoNewline
           "VERSION=$version" | Out-File $env:GITHUB_ENV -Append
           Select-String -Path app.py -Pattern '^VERSION ='
@@ -118,14 +147,16 @@ jobs:
             VidFetch-windows-x64.zip.sha256
 
       - name: Publish release
-        if: github.ref_type == 'tag'
+        if: needs.check.outputs.release == 'true'
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ env.VERSION }}
+          target_commitish: ${{ github.sha }}
           name: VidFetch ${{ env.VERSION }}
           generate_release_notes: true
           body: |
             ### Download
-            **[VidFetch-windows-x64.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/VidFetch-windows-x64.zip)** for Windows 10 and 11 (64-bit). Unzip it and double-click `VidFetch.exe`.
+            **[VidFetch-windows-x64.zip](https://github.com/${{ github.repository }}/releases/download/v${{ env.VERSION }}/VidFetch-windows-x64.zip)** for Windows 10 and 11 (64-bit). Unzip it and double-click `VidFetch.exe`.
 
             If Windows shows "Windows protected your PC", click **More info → Run anyway**. The app isn't code-signed yet.
 
