@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VidFetch — free video downloader for Windows</title>
+<meta name="description" content="VidFetch is a free, open-source video downloader for Windows. Paste a link, pick a quality, done. No ads, no accounts, no tracking.">
+<meta property="og:title" content="VidFetch — free video downloader for Windows">
+<meta property="og:description" content="Paste a link, pick a quality, done. Free and open source. No ads, accounts or tracking.">
+<meta property="og:image" content="https://sithumaluvihare.github.io/vidfetch/screenshot.png">
+<link rel="icon" href="icon.svg">
+<style>
+  :root {
+    --bg: #0f1012; --panel: #18191d; --panel-2: #212227; --line: #2a2b31;
+    --text: #ececef; --muted: #a0a1a9; --faint: #6f7078;
+    --accent: #ff6a3d; --accent-2: #ff8a63;
+    font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-size: 16px; line-height: 1.55; }
+  a { color: inherit; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+
+  nav { display: flex; align-items: center; gap: 10px; padding: 20px 0; }
+  nav .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; text-decoration: none; }
+  nav .brand img { width: 30px; height: 30px; }
+  nav .links { margin-left: auto; display: flex; gap: 4px; }
+  nav .links a { color: var(--muted); text-decoration: none; padding: 6px 10px; border-radius: 8px; font-size: 14.5px; }
+  nav .links a:hover { color: var(--text); background: var(--panel); }
+
+  .hero { text-align: center; padding: 56px 0 28px; position: relative; }
+  .hero::before { content: ""; position: absolute; inset: -40px 10% auto; height: 340px; z-index: -1;
+    background: radial-gradient(closest-side, rgba(255,106,61,.22), transparent); filter: blur(10px); }
+  .hero h1 { font-size: clamp(34px, 6vw, 60px); line-height: 1.05; letter-spacing: -.03em; margin: 0 0 16px; }
+  .hero h1 span { color: var(--accent); }
+  .hero p { color: var(--muted); font-size: clamp(16px, 2.2vw, 19px); max-width: 640px; margin: 0 auto 30px; }
+  .cta { display: inline-flex; align-items: center; gap: 12px; background: var(--accent); color: #1a0d07;
+    font-weight: 700; font-size: 17px; padding: 15px 26px; border-radius: 14px; text-decoration: none;
+    box-shadow: 0 10px 30px -10px rgba(255,106,61,.7); transition: transform .15s, background .15s; }
+  .cta:hover { background: var(--accent-2); transform: translateY(-1px); }
+  .cta svg { width: 20px; height: 20px; }
+  .meta { margin-top: 14px; color: var(--faint); font-size: 14px; }
+  .meta a { color: var(--muted); }
+
+  .shot { margin: 44px auto 0; max-width: 960px; border-radius: 18px; overflow: hidden;
+    border: 1px solid var(--line); box-shadow: 0 40px 80px -30px rgba(0,0,0,.8); }
+  .shot img { display: block; width: 100%; height: auto; }
+
+  section { padding: 72px 0 0; }
+  h2 { font-size: clamp(26px, 3.4vw, 34px); letter-spacing: -.02em; margin: 0 0 8px; }
+  .lead { color: var(--muted); margin: 0 0 30px; }
+
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 22px; }
+  .card .ic { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center;
+    background: rgba(255,106,61,.12); color: var(--accent); margin-bottom: 14px; }
+  .card .ic svg { width: 20px; height: 20px; }
+  .card h3 { margin: 0 0 6px; font-size: 17px; }
+  .card p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  .steps { counter-reset: s; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .step { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 22px; }
+  .step::before { counter-increment: s; content: counter(s); display: grid; place-items: center; width: 30px; height: 30px;
+    border-radius: 50%; background: var(--text); color: var(--bg); font-weight: 700; margin-bottom: 12px; }
+  .step h3 { margin: 0 0 6px; font-size: 17px; }
+  .step p { margin: 0; color: var(--muted); font-size: 15px; }
+  code { background: var(--panel-2); border: 1px solid var(--line); padding: 1px 6px; border-radius: 6px; font-size: .9em; }
+
+  details { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 0 20px; margin-bottom: 10px; }
+  summary { cursor: pointer; padding: 16px 0; font-weight: 600; list-style: none; display: flex; align-items: center; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "+"; margin-left: auto; color: var(--muted); font-size: 20px; font-weight: 400; }
+  details[open] summary::after { content: "–"; }
+  details p { margin: 0 0 16px; color: var(--muted); }
+
+  .notice { margin-top: 72px; background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--accent);
+    border-radius: 12px; padding: 18px 20px; color: var(--muted); font-size: 15px; }
+  .notice strong { color: var(--text); }
+
+  footer { padding: 40px 0 50px; color: var(--faint); font-size: 14px; display: flex; gap: 16px; flex-wrap: wrap; }
+  footer a { color: var(--muted); }
+  footer .r { margin-left: auto; }
+
+  @media (max-width: 800px) {
+    .grid, .steps { grid-template-columns: 1fr; }
+    nav .links a.hide-sm { display: none; }
+    footer .r { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <a class="brand" href="#"><img src="icon.svg" alt="">VidFetch</a>
+    <div class="links">
+      <a class="hide-sm" href="#features">Features</a>
+      <a class="hide-sm" href="#faq">FAQ</a>
+      <a href="https://github.com/SithumAluvihare/vidfetch">GitHub</a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <h1>Paste a link.<br><span>Get the video.</span></h1>
+    <p>A free, open-source video downloader for Windows. Works with over a thousand sites. No ads, no accounts, no tracking.</p>
+    <a class="cta" id="dl" href="https://github.com/SithumAluvihare/vidfetch/releases/latest/download/VidFetch-windows-x64.zip">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12M6 10l6 6 6-6M5 20h14"/></svg>
+      Download for Windows
+    </a>
+    <div class="meta"><span id="ver">Latest version</span> · Windows 10 &amp; 11 (64-bit) · <a href="https://github.com/SithumAluvihare/vidfetch/releases">All releases</a></div>
+    <div class="shot"><img src="screenshot.png" width="1040" height="760" alt="VidFetch window showing a video preview with quality options and a download queue"></div>
+  </header>
+
+  <section id="features">
+    <h2>Everything you need, nothing you don't</h2>
+    <p class="lead">Built on yt-dlp and FFmpeg, the same open-source tools many paid downloaders use behind the scenes.</p>
+    <div class="grid">
+      <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3z"/></svg></div>
+        <h3>Up to 4K quality</h3><p>Choose Best, 1080p, 720p or 480p. Video and audio are merged into a single MP4.</p></div>
+      <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>
+        <h3>MP3 audio</h3><p>Save just the audio of a lecture, podcast or talk as an MP3.</p></div>
+      <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg></div>
+        <h3>Queue and playlists</h3><p>Three downloads at once, with live speed and time left. Playlists get their own folder.</p></div>
+      <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/></svg></div>
+        <h3>Private by design</h3><p>Runs entirely on your PC. No sign-up, no telemetry, nothing sent anywhere but the video site.</p></div>
+      <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5"/></svg></div>
+        <h3>Stays working</h3><p>Sites change often. One click updates the download engine, without reinstalling.</p></div>
+      <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></svg></div>
+        <h3>Open source</h3><p>MIT-licensed and small enough to read. See exactly what it does on GitHub.</p></div>
+    </div>
+  </section>
+
+  <section id="install">
+    <h2>Get started in a minute</h2>
+    <p class="lead">No installer, no Python, nothing else to set up.</p>
+    <div class="steps">
+      <div class="step"><h3>Download and unzip</h3><p>Get the zip above, right-click it and choose <strong>Extract All</strong>.</p></div>
+      <div class="step"><h3>Open VidFetch.exe</h3><p>If Windows says "Windows protected your PC", click <strong>More info → Run anyway</strong>.</p></div>
+      <div class="step"><h3>Paste a link</h3><p>Pick a quality and click Download. Files go to <code>Downloads\VidFetch</code>.</p></div>
+    </div>
+  </section>
+
+  <section id="faq">
+    <h2>Questions</h2>
+    <p class="lead">Short answers to the common ones.</p>
+    <details><summary>Why does Windows warn me when I open it?</summary>
+      <p>VidFetch isn't code-signed yet. Signing certificates cost money, and Windows warns about unsigned apps it hasn't seen often. The app is built automatically on GitHub from the public source code, and every release lists its SHA-256 checksum so you can check the file you downloaded.</p></details>
+    <details><summary>Which sites does it support?</summary>
+      <p>Anything yt-dlp supports: YouTube, Facebook, Instagram, TikTok, Vimeo, X, Reddit and over a thousand more. Paid streaming services that use DRM, such as Netflix or Spotify, are not supported.</p></details>
+    <details><summary>A download stopped working. What do I do?</summary>
+      <p>Open Settings (the gear icon), click <strong>Update yt-dlp</strong>, then restart VidFetch. Sites change often and the engine usually catches up within days. If it still fails, <a href="https://github.com/SithumAluvihare/vidfetch/issues">open an issue</a>.</p></details>
+    <details><summary>Does it collect any data?</summary>
+      <p>No. VidFetch only talks to the site you download from, to PyPI when you update the engine, and to GitHub once per launch to check for a new version. Your history stays on your PC in <code>%APPDATA%\VidFetch</code>.</p></details>
+    <details><summary>How do I uninstall it?</summary>
+      <p>Delete the VidFetch folder. To remove settings and history too, also delete <code>%APPDATA%\VidFetch</code>.</p></details>
+  </section>
+
+  <div class="notice"><strong>Use it responsibly.</strong> Only download videos you own, that are freely licensed, or that you have permission to save. Respect copyright and each site's terms of service. You are responsible for how you use VidFetch.</div>
+
+  <footer>
+    <span>© 2026 Sithum Aluvihare · MIT License</span>
+    <span class="r"><a href="https://github.com/SithumAluvihare/vidfetch">Source code</a> · <a href="https://github.com/SithumAluvihare/vidfetch/blob/main/THIRD_PARTY_LICENSES.md">Third-party licences</a> · <a href="https://github.com/SithumAluvihare/vidfetch/issues">Report a problem</a></span>
+  </footer>
+</div>
+<script>
+  // Show the latest version and download size; the link above already works without this.
+  fetch("https://api.github.com/repos/SithumAluvihare/vidfetch/releases/latest")
+    .then(r => r.ok ? r.json() : Promise.reject())
+    .then(rel => {
+      const asset = (rel.assets || []).find(a => a.name === "VidFetch-windows-x64.zip");
+      let text = "Version " + rel.tag_name.replace(/^v/, "");
+      if (asset) text += " · " + Math.round(asset.size / 1048576) + " MB";
+      document.getElementById("ver").textContent = text;
+    })
+    .catch(() => {});
+</script>
+</body>
+</html>
